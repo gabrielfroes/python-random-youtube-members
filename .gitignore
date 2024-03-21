@@ -1,0 +1,5 @@
+.env
+data/*.csv
+client_secrets.json
+__pycache__
+venv/

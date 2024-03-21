@@ -1,0 +1,6 @@
+pandas
+python-dotenv
+Pillow
+requests
+AsciiArt
+
