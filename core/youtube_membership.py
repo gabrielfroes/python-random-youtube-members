@@ -1,17 +1,19 @@
-import sys, os, io
-import re
+import os
 import random
-import requests
-import pandas as pd
-from PIL import Image
-from ascii_magic import AsciiArt, Back, Front
+import re
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pandas as pd
+import requests
+from PIL import Image
+from ascii_magic import AsciiArt
+
 from config import settings
+
 
 def read_csv(file_path):
     members_df = pd.read_csv(file_path)
     return members_df
+
 
 def rename_csv_columns(members_df):
     new_column_names = [
@@ -23,9 +25,10 @@ def rename_csv_columns(members_df):
         'last_update',
         'last_update_timestamp'
     ]
-    
+
     members_df.columns = new_column_names
     return members_df
+
 
 def get_members_from_csv(file_path):
     members_df = read_csv(file_path)
@@ -33,21 +36,27 @@ def get_members_from_csv(file_path):
     members = members_df.to_dict('records')
     return members
 
+
 def filter_members_by_level(members, level):
-    return [member for member in members if member['membership_level'] == level]
+    return [member for member in members if
+            member['membership_level'] == level]
+
 
 def list_membership_levels(members):
     levels = set(member['membership_level'] for member in members)
     return list(levels)
 
+
 def pick_random_member(members):
     return random.choice(members)
-  
+
+
 # Extrai o ID do canal a partir da URL
 def extract_channel_id(youtube_channel_url):
     regex = r'(?:youtube\.com\/channel\/)([^\/]+)'
     match = re.search(regex, youtube_channel_url)
     return match.group(1) if match else None
+
 
 def get_user_photo_url(youtube_channel_url):
     channel_id = extract_channel_id(youtube_channel_url)
@@ -56,6 +65,7 @@ def get_user_photo_url(youtube_channel_url):
 
     photo_url = fetch_channel_photo_url(channel_id)
     return photo_url
+
 
 # Usa a API do YouTube para obter a URL da foto do perfil
 def fetch_channel_photo_url(channel_id):
@@ -73,10 +83,12 @@ def fetch_channel_photo_url(channel_id):
     else:
         return None
 
+
 def photo_url_to_ascii_art(photo_url):
     photo = Image.open(requests.get(photo_url, stream=True).raw)
     photo_ascii_art = AsciiArt.from_pillow_image(photo)
     return photo_ascii_art.to_ascii(columns=100, char="#")
+
 
 def get_membership_badge_image(months):
     badge_data = [
@@ -92,8 +104,10 @@ def get_membership_badge_image(months):
 
     for limit, badge_file_name in badge_data:
         if months < limit:
-            badge_image_path = os.path.join('assets', 'badges', badge_file_name)
+            badge_image_path = os.path.join('assets', 'badges',
+                                            badge_file_name)
             return badge_image_path
+
 
 def get_member(member):
     # Carrega dados extras do membro
