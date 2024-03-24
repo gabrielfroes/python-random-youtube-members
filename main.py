@@ -1,5 +1,6 @@
 from core import youtube_membership as youtube
 
+
 def main():
     # Load CSV file
     file_path = 'data/members_sample.csv'
@@ -17,6 +18,7 @@ def main():
     print(f"Atualização: {member['last_update']}")
     print(f"Badge: {member['badge_image']}")
     print(f"===================================================")
+
 
 if __name__ == "__main__":
     main()
