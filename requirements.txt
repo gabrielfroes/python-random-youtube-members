@@ -1,6 +1,5 @@
-pandas
-python-dotenv
-Pillow
-requests
-AsciiArt
-
+pandas==2.2.1
+python-dotenv==1.0.1
+Pillow==10.2.0
+requests==2.31.0
+ascii-magic==2.3.0
