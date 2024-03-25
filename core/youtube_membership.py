@@ -1,5 +1,4 @@
 import os
-import random
 import re
 
 import pandas as pd
@@ -8,6 +7,7 @@ from PIL import Image
 from ascii_magic import AsciiArt
 
 from config import settings
+from core.member import Member, MemberList, ExtraInfo
 
 
 def read_csv(file_path):
@@ -30,25 +30,11 @@ def rename_csv_columns(members_df):
     return members_df
 
 
-def get_members_from_csv(file_path):
+def get_members_from_csv(file_path) -> MemberList:
     members_df = read_csv(file_path)
     members_df = rename_csv_columns(members_df)
     members = members_df.to_dict('records')
-    return members
-
-
-def filter_members_by_level(members, level):
-    return [member for member in members if
-            member['membership_level'] == level]
-
-
-def list_membership_levels(members):
-    levels = set(member['membership_level'] for member in members)
-    return list(levels)
-
-
-def pick_random_member(members):
-    return random.choice(members)
+    return MemberList.from_json(members)
 
 
 # Extrai o ID do canal a partir da URL
@@ -75,7 +61,7 @@ def fetch_channel_photo_url(channel_id):
         'id': channel_id,
         'key': settings.YOUTUBE_API_KEY,
     }
-    response = requests.get(base_url, params=params)
+    response = requests.get(base_url, params=params, timeout=5)
     data = response.json()
 
     if 'items' in data and data['items']:
@@ -85,7 +71,7 @@ def fetch_channel_photo_url(channel_id):
 
 
 def photo_url_to_ascii_art(photo_url):
-    photo = Image.open(requests.get(photo_url, stream=True).raw)
+    photo = Image.open(requests.get(photo_url, stream=True, timeout=5).raw)
     photo_ascii_art = AsciiArt.from_pillow_image(photo)
     return photo_ascii_art.to_ascii(columns=100, char="#")
 
@@ -109,21 +95,10 @@ def get_membership_badge_image(months):
             return badge_image_path
 
 
-def get_member(member):
+def get_extra_info(member: Member) -> ExtraInfo:
     # Carrega dados extras do membro
-    photo_url = get_user_photo_url(member['profile_url'])
+    photo_url = get_user_photo_url(member.profile_url)
     photo_ascii = photo_url_to_ascii_art(photo_url)
-    badge_image = get_membership_badge_image(member['total_time_as_member'])
+    badge_image = get_membership_badge_image(member.total_time_as_member)
 
-    return {
-        'name': member['name'],
-        'profile_url': member['profile_url'],
-        'photo_url': photo_url,
-        'photo_ascii': photo_ascii,
-        'membership_level': member['membership_level'],
-        'total_time_in_level': member['total_time_in_level'],
-        'total_time_as_member': member['total_time_as_member'],
-        'last_update': member['last_update'],
-        'last_update_timestamp': member['last_update_timestamp'],
-        'badge_image': badge_image,
-    }
+    return ExtraInfo(photo_url, badge_image, photo_ascii)
