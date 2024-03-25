@@ -26,7 +26,8 @@ venv\Scripts\activate # Para usuários Windows
 3. Instale as dependências:
 
 ```
-pip install -r requirements.txt
+pip install invoke
+inv install-dev
 ```
 
 4. Baixe o arquivo CSV com os membros do Clube de Membros do YouTube a partir do painel do YouTube Studio e salve-o na pasta `data` do projeto com o nome `members.csv`. Deixamos um arquivos chamado `members.csv.example` com um modelo de dados de exemplo. Se quiser renomeie-o para testar.
@@ -41,10 +42,10 @@ cp .env.example .env
 
 ## Uso
 
-7. Execute o script `main.py` para iniciar o programa:
+7. Execute o script usando o invoke:
 
 ```
-python main.py
+inv run
 ```
 
 Siga as instruções exibidas no terminal para gerenciar membros e realizar sorteios.
@@ -54,7 +55,7 @@ Siga as instruções exibidas no terminal para gerenciar membros e realizar sort
 8. Para executar os testes de unidade, execute o seguinte comando:
 
 ```
-python -m unittest discover tests
+inv tests
 ```
 
 ## Contribuições
