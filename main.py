@@ -9,6 +9,10 @@ def main():
     # Pick a random member
     member = youtube.pick_random_member(members)
     member = youtube.get_member(member)
+    _show_results(member)
+
+
+def _show_results(member):
     print(f"{member['photo_ascii']}")
     print(f"Foto: {member['photo_url']}")
     print(f"===================================================")
