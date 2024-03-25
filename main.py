@@ -8,8 +8,9 @@ def main():
     members = youtube.get_members_from_csv(file_path)
 
     # Pick a random member
-    member = youtube.pick_random_member(members)
-    member = youtube.get_member(member)
+    member = members.pick_random()
+    extra_info = youtube.get_extra_info(member.profile_url)
+    member.enrich(extra_info)
     _show_results(member)
 
 
@@ -17,7 +18,7 @@ def _show_results(member: Member):
     print(f"{member.photo_ascii}")
     print(f"Foto: {member.photo_url}")
     print(f"===================================================")
-    print(f"Canal: {member.name} - {member.profile_url}")
+    print(f"Canal: {member.channel}")
     print(f"Nível: {member.membership_level}")
     print(f"Tempo Assinatura: {member.total_time_as_member} meses")
     print(f"Atualização: {member.last_update}")
