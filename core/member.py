@@ -45,7 +45,7 @@ class MemberList:
         return list(set(member.membership_level for member in self.members))
 
     def pick_random(self):
-        return choice(self.members)
+        return choice(self.members)  # noqa
 
     @classmethod
     def from_json(cls, members_json):

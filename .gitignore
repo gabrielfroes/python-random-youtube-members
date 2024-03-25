@@ -4,3 +4,4 @@ client_secrets.json
 __pycache__
 venv/
 .idea/
+.coverage

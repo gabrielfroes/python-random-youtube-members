@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 
 from core import youtube_membership
-from core.member import Member
+from core.member import MemberList
 
 
 def ppatch(obj, *args, **kwargs):
@@ -14,7 +14,6 @@ def ppatch(obj, *args, **kwargs):
 
 
 class TestYoutube(unittest.TestCase):
-
     def test_get_members_from_csv(self):
         # Dados fictícios para teste
         fake_data = [
@@ -49,21 +48,12 @@ class TestYoutube(unittest.TestCase):
         # core.youtube_membership.read_csv
         with patch('core.youtube_membership.read_csv',
                    MagicMock(return_value=fake_members_df)):
-            members_df = youtube_membership.get_members_from_csv(
+            members = youtube_membership.get_members_from_csv(
                 'fake_file_path.csv')
 
-        # Verifica se as colunas do DataFrame resultado estão corretamente
-        # renomeadas
-        expected_columns = ['name', 'profile_url', 'membership_level',
-                            'total_time_in_level', 'total_time_as_member',
-                            'last_update', 'last_update_timestamp']
-        self.assertListEqual(list(members_df[0].keys()), expected_columns)
+        self.assertIsInstance(members, MemberList)
 
-        # Verifica se o resultado tem o mesmo número de linhas que os dados
-        # fictícios
-        fake_data_new_columns = youtube_membership.rename_csv_columns(
-            fake_members_df)
-        self.assertEqual(len(members_df), len(fake_data_new_columns))
+        self.assertEqual(len(members.members), 2)
 
     def test_get_membership_badge_image(self):
         test_cases = [
@@ -145,6 +135,62 @@ class TestYoutube(unittest.TestCase):
         # Verifica se a URL da foto do perfil é a esperada
         self.assertEqual(photo_url, fake_photo_url)
 
+    def test_get_user_photo_url_with_none(self):
+        # Exemplo de URL do canal do YouTube
+        test_data = 'https://youtube.com/invalid_path/for/testing'
+
+        photo_url = youtube_membership.get_user_photo_url(test_data)
+        self.assertIsNone(photo_url)
+
+    @ppatch('requests')
+    def test_fetch_channel_photo_url(self, mock_requests):
+        mock_channel_id = MagicMock()
+        mock_requests.get.return_value.json.return_value = MagicMock(
+            __contains__=MagicMock(return_value=True))
+        result = youtube_membership.fetch_channel_photo_url(mock_channel_id)
+
+        mock_requests.get.assert_called_once()
+        mock_response = mock_requests.get.return_value
+        mock_response.json.assert_called_once()
+
+        mock_snipped = mock_response.json.return_value['items'][0]['snippet']
+        mock_url = mock_snipped['thumbnails']['default']['url']
+
+        self.assertEqual(result, mock_url)
+
+    @ppatch('requests')
+    def test_fetch_channel_photo_url_with_none_result(self, mock_requests):
+        mock_channel_id = MagicMock()
+        mock_requests.get.return_value.json.return_value = MagicMock(
+            __contains__=MagicMock(return_value=False))
+        result = youtube_membership.fetch_channel_photo_url(mock_channel_id)
+
+        self.assertIsNone(result)
+
+    @ppatch('Image')
+    @ppatch('requests')
+    @ppatch('AsciiArt')
+    def test_photo_url_to_ascii_art(self,
+                                    mock_ascii_art,
+                                    mock_requests,
+                                    mock_image):
+        mock_photo_url = MagicMock()
+        result = youtube_membership.photo_url_to_ascii_art(mock_photo_url)
+
+        mock_requests.get.assert_called_once_with(mock_photo_url,
+                                                  stream=True,
+                                                  timeout=5)
+        mock_response = mock_requests.get.return_value
+        mock_image.open.assert_called_once_with(mock_response.raw)
+        mock_ascii_art.from_pillow_image.assert_called_once_with(
+            mock_image.open.return_value)
+        mock_photo_ascii_art = mock_ascii_art.from_pillow_image.return_value
+
+        mock_photo_ascii_art.to_ascii.assert_called_once_with(columns=100,
+                                                              char="#")
+
+        self.assertEqual(result, mock_photo_ascii_art.to_ascii.return_value)
+
     def test_extract_channel_id(self):
         # Exemplos de URLs do canal do YouTube
         test_data = [
@@ -170,41 +216,36 @@ class TestYoutube(unittest.TestCase):
             channel_id = youtube_membership.extract_channel_id(data['input'])
             self.assertEqual(channel_id, data['expected_output'])
 
+    @ppatch('pd')
+    def test_read_csv(self, mock_pd):
+        mock_file_csv = 'fake_file_path.csv'
+        result = youtube_membership.read_csv(mock_file_csv)
+
+        mock_pd.read_csv.assert_called_once_with(mock_file_csv)
+        self.assertEqual(result, mock_pd.read_csv.return_value)
+
     @ppatch('get_user_photo_url')
     @ppatch('photo_url_to_ascii_art')
     @ppatch('get_membership_badge_image')
-    def test_get_member(self,
-                        mock_get_membership_badge_image,
-                        mock_photo_url_to_ascii_art,
-                        mock_get_user_photo_url):
-        # Exemplo de dados de membro
-        fake_member = {
-            'name': 'João Silva',
-            'profile_url': 'https://www.youtube.com/channel/'
-                           'UC-CQ5189EZ4hRDxwHtD7Sog',
-            'membership_level': 'Compilador',
-            'total_time_in_level': 12.5,
-            'total_time_as_member': 12.5,
-            'last_update': 'Virou assinante',
-            'last_update_timestamp': '2023-05-03T05:32:33.558-07:00'
-        }
+    @ppatch('ExtraInfo')
+    def test_get_extra_info(self,
+                            mock_extra_info_cls,
+                            mock_get_membership_badge_image,
+                            mock_photo_url_to_ascii_art,
+                            mock_get_user_photo_url):
+        mock_member = MagicMock()
+        result = youtube_membership.get_extra_info(mock_member)
 
-        result = youtube_membership.get_member(fake_member)
+        mock_get_user_photo_url.assert_called_once_with(
+            mock_member.profile_url)
+        mock_photo_url_to_ascii_art.assert_called_once_with(
+            mock_get_user_photo_url.return_value)
+        mock_get_membership_badge_image.assert_called_once_with(
+            mock_member.total_time_as_member)
 
-        expected = Member(
-            name=fake_member['name'],
-            profile_url=fake_member['profile_url'],
-            photo_url=mock_get_user_photo_url.return_value,
-            membership_level=fake_member['membership_level'],
-            total_time_in_level=fake_member['total_time_in_level'],
-            total_time_as_member=fake_member['total_time_as_member'],
-            last_update=fake_member['last_update'],
-            last_update_timestamp=fake_member['last_update_timestamp'],
-            badge_image=mock_get_membership_badge_image.return_value,
-            photo_ascii=mock_photo_url_to_ascii_art.return_value)
-        # Verifica se os dados do membro resultante estão corretos
-        self.assertEqual(result, expected)
+        mock_extra_info_cls.assert_called_once_with(
+            mock_get_user_photo_url.return_value,
+            mock_get_membership_badge_image.return_value,
+            mock_photo_url_to_ascii_art.return_value)
 
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertEqual(result, mock_extra_info_cls.return_value)

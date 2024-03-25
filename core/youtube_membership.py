@@ -61,7 +61,7 @@ def fetch_channel_photo_url(channel_id):
         'id': channel_id,
         'key': settings.YOUTUBE_API_KEY,
     }
-    response = requests.get(base_url, params=params)
+    response = requests.get(base_url, params=params, timeout=5)
     data = response.json()
 
     if 'items' in data and data['items']:
@@ -71,7 +71,7 @@ def fetch_channel_photo_url(channel_id):
 
 
 def photo_url_to_ascii_art(photo_url):
-    photo = Image.open(requests.get(photo_url, stream=True).raw)
+    photo = Image.open(requests.get(photo_url, stream=True, timeout=5).raw)
     photo_ascii_art = AsciiArt.from_pillow_image(photo)
     return photo_ascii_art.to_ascii(columns=100, char="#")
 

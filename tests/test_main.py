@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch, call
 
 from core.member import Member
+from main import main
 
 
 def ppatch(obj, *args, **kwargs):
@@ -41,3 +42,22 @@ class TestMain(TestCase):
             call(f"Badge: {member.badge_image}"),
             call(separator)
         ])
+
+    @ppatch('youtube')
+    @ppatch('_show_results')
+    def test_main(self, mock_show_results, mock_youtube):
+        main()
+
+        mock_youtube.get_members_from_csv.assert_called_once_with(
+            'data/members_sample.csv')
+        mock_members = mock_youtube.get_members_from_csv.return_value
+
+        mock_members.pick_random.assert_called_once_with()
+        mock_member = mock_members.pick_random.return_value
+
+        mock_youtube.get_extra_info.assert_called_once_with(
+            mock_member.profile_url)
+        mock_extra_info = mock_youtube.get_extra_info.return_value
+
+        mock_member.enrich.assert_called_once_with(mock_extra_info)
+        mock_show_results.assert_called_once_with(mock_member)
