@@ -110,7 +110,7 @@ def get_membership_badge_image(months):
             return badge_image_path
 
 
-def get_member(member):
+def get_member(member) -> Member:
     # Carrega dados extras do membro
     photo_url = get_user_photo_url(member['profile_url'])
     photo_ascii = photo_url_to_ascii_art(photo_url)

@@ -1,4 +1,5 @@
 from core import youtube_membership as youtube
+from core.member import Member
 
 
 def main():
@@ -12,15 +13,15 @@ def main():
     _show_results(member)
 
 
-def _show_results(member):
-    print(f"{member['photo_ascii']}")
-    print(f"Foto: {member['photo_url']}")
+def _show_results(member: Member):
+    print(f"{member.photo_ascii}")
+    print(f"Foto: {member.photo_url}")
     print(f"===================================================")
-    print(f"Canal: {member['name']} - {member['profile_url']}")
-    print(f"Nível: {member['membership_level']}")
-    print(f"Tempo Assinatura: {member['total_time_as_member']} meses")
-    print(f"Atualização: {member['last_update']}")
-    print(f"Badge: {member['badge_image']}")
+    print(f"Canal: {member.name} - {member.profile_url}")
+    print(f"Nível: {member.membership_level}")
+    print(f"Tempo Assinatura: {member.total_time_as_member} meses")
+    print(f"Atualização: {member.last_update}")
+    print(f"Badge: {member.badge_image}")
     print(f"===================================================")
 
 
