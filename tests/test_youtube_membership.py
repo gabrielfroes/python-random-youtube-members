@@ -5,6 +5,12 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 
 from core import youtube_membership
+from core.member import Member
+
+
+def ppatch(obj, *args, **kwargs):
+    prefix = 'core.youtube_membership'
+    return patch(f"{prefix}.{obj}", *args, **kwargs)
 
 
 class TestYoutube(unittest.TestCase):
@@ -164,7 +170,13 @@ class TestYoutube(unittest.TestCase):
             channel_id = youtube_membership.extract_channel_id(data['input'])
             self.assertEqual(channel_id, data['expected_output'])
 
-    def test_get_member(self):
+    @ppatch('get_user_photo_url')
+    @ppatch('photo_url_to_ascii_art')
+    @ppatch('get_membership_badge_image')
+    def test_get_member(self,
+                        mock_get_membership_badge_image,
+                        mock_photo_url_to_ascii_art,
+                        mock_get_user_photo_url):
         # Exemplo de dados de membro
         fake_member = {
             'name': 'João Silva',
@@ -177,32 +189,21 @@ class TestYoutube(unittest.TestCase):
             'last_update_timestamp': '2023-05-03T05:32:33.558-07:00'
         }
 
-        # Exemplos de URL de foto e imagem de emblema
-        fake_photo_url = ('https://yt3.googleusercontent.com/ytc/'
-                          'AGIKgqNYnWV_wrW9eSH1bz2akU2yUHBPXV9NE383_'
-                          'YAsvA=s176-c-k-c0x00ffffff-no-rj')
-        fake_badge_image = 'assets/badges/12_months.png'
+        result = youtube_membership.get_member(fake_member)
 
-        # Utiliza MagicMock para simular o resultado das funções
-        # get_user_photo_url
-        with patch('core.youtube_membership.get_user_photo_url',
-                   MagicMock(return_value=fake_photo_url)):
-            result = youtube_membership.get_member(fake_member)
-
+        expected = Member(
+            name=fake_member['name'],
+            profile_url=fake_member['profile_url'],
+            photo_url=mock_get_user_photo_url.return_value,
+            membership_level=fake_member['membership_level'],
+            total_time_in_level=fake_member['total_time_in_level'],
+            total_time_as_member=fake_member['total_time_as_member'],
+            last_update=fake_member['last_update'],
+            last_update_timestamp=fake_member['last_update_timestamp'],
+            badge_image=mock_get_membership_badge_image.return_value,
+            photo_ascii=mock_photo_url_to_ascii_art.return_value)
         # Verifica se os dados do membro resultante estão corretos
-        self.assertEqual(result['name'], fake_member['name'])
-        self.assertEqual(result['profile_url'], fake_member['profile_url'])
-        self.assertEqual(result['photo_url'], fake_photo_url)
-        self.assertEqual(result['membership_level'],
-                         fake_member['membership_level'])
-        self.assertEqual(result['total_time_in_level'],
-                         fake_member['total_time_in_level'])
-        self.assertEqual(result['total_time_as_member'],
-                         fake_member['total_time_as_member'])
-        self.assertEqual(result['last_update'], fake_member['last_update'])
-        self.assertEqual(result['last_update_timestamp'],
-                         fake_member['last_update_timestamp'])
-        self.assertEqual(result['badge_image'], fake_badge_image)
+        self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':

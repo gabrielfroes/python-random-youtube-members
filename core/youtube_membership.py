@@ -8,6 +8,7 @@ from PIL import Image
 from ascii_magic import AsciiArt
 
 from config import settings
+from core.member import Member
 
 
 def read_csv(file_path):
@@ -115,15 +116,15 @@ def get_member(member):
     photo_ascii = photo_url_to_ascii_art(photo_url)
     badge_image = get_membership_badge_image(member['total_time_as_member'])
 
-    return {
-        'name': member['name'],
-        'profile_url': member['profile_url'],
-        'photo_url': photo_url,
-        'photo_ascii': photo_ascii,
-        'membership_level': member['membership_level'],
-        'total_time_in_level': member['total_time_in_level'],
-        'total_time_as_member': member['total_time_as_member'],
-        'last_update': member['last_update'],
-        'last_update_timestamp': member['last_update_timestamp'],
-        'badge_image': badge_image,
-    }
+    return Member(
+        name=member['name'],
+        profile_url=member['profile_url'],
+        photo_url=photo_url,
+        photo_ascii=photo_ascii,
+        membership_level=member['membership_level'],
+        total_time_in_level=member['total_time_in_level'],
+        total_time_as_member=member['total_time_as_member'],
+        last_update=member['last_update'],
+        last_update_timestamp=member['last_update_timestamp'],
+        badge_image=badge_image,
+    )
